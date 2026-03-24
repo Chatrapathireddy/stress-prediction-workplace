@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+{% block title %}Forecast & Burnout Risk — StressIQ{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="pg-header">
+    <h2>🔮 Forecast & Burnout Early Warning</h2>
+    <p>AI-powered predictions based on your personal stress history</p>
+  </div>
+
+  {% if not forecast and not burnout %}
+  <div class="alert alert-info">
+    You need at least <strong>3 assessments</strong> before forecasting is available.
+    <a href="{{ url_for('stress_predictor') }}" style="color:var(--accent)">Take an assessment →</a>
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+    <!-- FORECAST -->
+    <div class="col-md-6">
+      <div class="card h-100 border-accent">
+        <div class="card-header" style="background:rgba(124,111,255,.12);border-color:rgba(124,111,255,.2);color:var(--accent)">
+          🔮 Tomorrow's Stress Risk
+          <small class="d-block fw-normal" style="color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.8rem">Pattern-based prediction from your history</small>
+        </div>
+        <div class="card-body">
+          {% if forecast %}
+          <div class="text-center mb-4">
+            <div style="font-size:4rem;line-height:1;margin-bottom:.5rem">
+              {% if forecast.forecast_level=='Low'%}😊{%elif forecast.forecast_level=='Medium'%}😐{%elif forecast.forecast_level=='High'%}😟{%else%}😨{%endif%}
+            </div>
+            <div class="score-num {% if forecast.forecast_level=='Low'%}stress-low{%elif forecast.forecast_level=='Medium'%}stress-medium{%elif forecast.forecast_level=='High'%}stress-high{%else%}stress-extreme{%endif%}">
+              {{ forecast.forecast_level }}
+            </div>
+            <div style="color:var(--muted);font-size:.88rem;margin-top:.4rem">Risk Score <strong style="color:var(--text)">{{ forecast.risk_score }}/100</strong> &bull; <strong style="color:var(--text)">{{ forecast.confidence }}%</strong> confidence</div>
+          </div>
+          <div class="progress mb-4" style="height:10px">
+            <div class="progress-bar {% if forecast.risk_score<30%}bg-success{%elif forecast.risk_score<60%}bg-warning{%else%}bg-danger{%endif%}" style="width:{{ forecast.risk_score }}%"></div>
+          </div>
+          <div style="font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">Why this forecast</div>
+          {% for r in forecast.reasoning %}
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;margin-bottom:.4rem;font-size:.86rem">{{ r }}</div>
+          {% endfor %}
+          <div style="color:var(--muted);font-size:.75rem;margin-top:.75rem">Based on {{ forecast.records_used }} past records</div>
+          {% else %}
+          <div class="text-center py-5" style="color:var(--muted)">
+            <div style="font-size:2.5rem;margin-bottom:.75rem">📊</div>
+            <p>Not enough data yet</p>
+            <a href="{{ url_for('stress_predictor') }}" class="btn-prime" style="text-decoration:none;font-size:.85rem">Add Assessment</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- BURNOUT -->
+    <div class="col-md-6">
+      <div class="card h-100 {% if burnout %}{% if burnout.alert_level=='Critical'%}border-red{%elif burnout.alert_level=='High'%}border-yellow{%else%}border-teal{%endif%}{%endif%}">
+        <div class="card-header {% if burnout %}{% if burnout.alert_level=='Critical'%}bg-danger{%elif burnout.alert_level=='High'%}bg-warning{%elif burnout.alert_level=='Moderate'%}bg-info{%else%}bg-success{%endif%}{% endif %}">
+          🚨 Burnout Early Warning System
+          <small class="d-block fw-normal" style="font-family:'DM Sans',sans-serif;font-size:.8rem;opacity:.8">14-day rolling window analysis</small>
+        </div>
+        <div class="card-body">
+          {% if burnout %}
+          <div class="text-center mb-4">
+            <div class="score-num {% if burnout.burnout_risk<25%}stress-low{%elif burnout.burnout_risk<50%}text-info{%elif burnout.burnout_risk<75%}stress-medium{%else%}stress-extreme{%endif%}">
+              {{ burnout.burnout_risk }}%
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin:.4rem 0">{{ burnout.alert_level }} Risk</div>
+            <div class="alert {% if burnout.alert_level=='Low'%}alert-success{%elif burnout.alert_level=='Moderate'%}alert-info{%elif burnout.alert_level=='High'%}alert-warning{%else%}alert-danger{%endif%}" style="margin:0;font-size:.84rem;padding:.6rem .9rem">
+              {{ burnout.alert_msg }}
+            </div>
+          </div>
+          <div class="progress mb-4" style="height:10px">
+            <div class="progress-bar {% if burnout.burnout_risk<25%}bg-success{%elif burnout.burnout_risk<50%}bg-info{%elif burnout.burnout_risk<75%}bg-warning{%else%}bg-danger{%endif%}" style="width:{{ burnout.burnout_risk }}%"></div>
+          </div>
+          <div style="font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">Risk Components</div>
+          {% set comps = [('Sustained High Stress', burnout.components.sustained_high, 'red'),('Upward Trend', burnout.components.upward_trend, 'yellow'),('Recovery Deficit', burnout.components.recovery_deficit, 'accent'),('CSI Elevation', burnout.components.csi_elevation, 'muted')] %}
+          {% for label, val, color in comps %}
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div style="font-size:.82rem;color:var(--muted);width:130px;flex-shrink:0">{{ label }}</div>
+            <div class="progress flex-grow-1" style="height:6px"><div class="progress-bar" style="width:{{ val }}%;background:var(--{{ color }})"></div></div>
+            <div style="font-size:.78rem;color:var(--muted);width:28px;text-align:right">{{ val|round(0)|int }}</div>
+          </div>
+          {% endfor %}
+          <div style="font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:.9rem 0 .5rem">Warning Signals</div>
+          {% for s in burnout.signals %}
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;margin-bottom:.35rem;font-size:.83rem">{{ s }}</div>
+          {% endfor %}
+          {% else %}
+          <div class="text-center py-5" style="color:var(--muted)">
+            <div style="font-size:2.5rem;margin-bottom:.75rem">🧠</div>
+            <p>Not enough data yet</p>
+            <a href="{{ url_for('stress_predictor') }}" class="btn-prime" style="text-decoration:none;font-size:.85rem">Add Assessment</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('stress_predictor') }}" class="btn-prime" style="text-decoration:none">New Assessment</a>
+    <a href="{{ url_for('analysis') }}" class="btn-ghost ms-2" style="text-decoration:none">Full Analysis</a>
+  </div>
+</div>
+{% endblock %}

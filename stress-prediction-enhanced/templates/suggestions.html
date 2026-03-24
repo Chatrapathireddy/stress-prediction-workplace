@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+{% block title %}Adaptive Suggestions - Workplace Stress Detection{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h2>Adaptive Stress Management Suggestions</h2>
+      <p class="text-muted">Based on your assessment on {{ record.date.strftime('%B %d, %Y at %I:%M %p') }}. Suggestions ranked by your personal effectiveness history.</p>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0">Your Stress Level</h5></div>
+        <div class="card-body text-center">
+          <div class="display-1 mb-2">
+            {% if record.stress_level == 'Low' %}😊{% elif record.stress_level == 'Medium' %}🙂{% elif record.stress_level == 'High' %}😐{% else %}😨{% endif %}
+          </div>
+          <h3 class="{% if record.stress_level == 'Low' %}text-success{% elif record.stress_level == 'Medium' %}text-warning{% else %}text-danger{% endif %}">
+            {{ record.stress_level }}
+          </h3>
+          <p class="lead">{{ record.stress_percentage }}%</p>
+        </div>
+      </div>
+
+      <!-- CSI Score Card -->
+      {% if csi_score is defined %}
+      <div class="card mb-3 border-warning">
+        <div class="card-header bg-warning text-dark fw-bold">🧮 Compound Stress Index</div>
+        <div class="card-body text-center">
+          <h3 class="{% if csi_score < 30 %}text-success{% elif csi_score < 60 %}text-warning{% else %}text-danger{% endif %}">{{ csi_score }}/100</h3>
+          <div class="progress" style="height:8px">
+            <div class="progress-bar {% if csi_score < 30 %}bg-success{% elif csi_score < 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ csi_score }}%"></div>
+          </div>
+          <small class="text-muted mt-2 d-block">Sleep × Work × Environment interaction score</small>
+        </div>
+      </div>
+
+      <!-- ESL Score Card -->
+      <div class="card border-info">
+        <div class="card-header bg-info text-white fw-bold">🌡️ Environmental Stress Load</div>
+        <div class="card-body text-center">
+          <h3 class="{% if esl_score < 30 %}text-success{% elif esl_score < 60 %}text-warning{% else %}text-danger{% endif %}">{{ esl_score }}/100</h3>
+          <div class="progress" style="height:8px">
+            <div class="progress-bar {% if esl_score < 30 %}bg-success{% elif esl_score < 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ esl_score }}%"></div>
+          </div>
+          <small class="text-muted mt-2 d-block">Noise + Temp + Circadian × amplifier</small>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="mt-3">
+        <a href="{{ url_for('stress_predictor') }}" class="btn btn-primary btn-sm">New Assessment</a>
+        <a href="{{ url_for('analysis') }}" class="btn btn-outline-dark btn-sm">View Analysis</a>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Your Personalised Suggestions</h5>
+          <small class="text-muted">✨ Ranked by personal effectiveness</small>
+        </div>
+        <div class="card-body">
+          {% for s in suggestions %}
+          <div class="card mb-3 {% if s.weight >= 1.5 %}border-success{% elif s.weight < 0.8 %}border-secondary{% endif %}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <h5 class="card-title mb-0">{{ s.title }}</h5>
+                {% if s.badge %}
+                  <span class="badge {% if s.badge == 'Proven Effective' %}bg-success{% else %}bg-secondary{% endif %}">{{ s.badge }}</span>
+                {% endif %}
+              </div>
+              <p class="card-text text-muted">{{ s.content }}</p>
+              <!-- AFL: thumbs up/down feedback -->
+              <div class="d-flex gap-2 mt-2">
+                <small class="text-muted me-2 align-self-center">Was this helpful?</small>
+                <button class="btn btn-sm btn-outline-success feedback-btn" data-key="{{ s.key }}" data-helpful="true">👍 Yes</button>
+                <button class="btn btn-sm btn-outline-secondary feedback-btn" data-key="{{ s.key }}" data-helpful="false">👎 No</button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.feedback-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const key = this.dataset.key;
+    const helpful = this.dataset.helpful === 'true';
+    fetch('/api/suggestion-feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({key, helpful})
+    }).then(() => {
+      this.classList.add(helpful ? 'btn-success' : 'btn-secondary');
+      this.classList.remove(helpful ? 'btn-outline-success' : 'btn-outline-secondary');
+      this.disabled = true;
+      this.closest('.d-flex').querySelector(helpful ? '.btn-outline-secondary' : '.btn-outline-success').disabled = true;
+    });
+  });
+});
+</script>
+{% endblock %}

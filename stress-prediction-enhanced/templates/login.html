@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block title %}Login — StressIQ{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width:420px">
+  <div class="text-center mb-4">
+    <h2 style="font-size:1.8rem;font-weight:800">Welcome back</h2>
+    <p style="color:var(--muted);font-size:.9rem">Sign in to your StressIQ account</p>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:2rem">
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" name="username" required placeholder="Enter username">
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" name="password" required placeholder="Enter password">
+        </div>
+        <button type="submit" class="btn-prime w-100" style="border:none">Sign In</button>
+      </form>
+      <p class="text-center mt-3 mb-0" style="font-size:.88rem;color:var(--muted)">
+        No account? <a href="{{ url_for('signup') }}" style="color:var(--accent)">Sign up</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

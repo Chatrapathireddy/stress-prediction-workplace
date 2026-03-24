@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: stress-prediction-app
+    env: python
+    region: oregon  # or change to your preferred region
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    autoDeploy: true

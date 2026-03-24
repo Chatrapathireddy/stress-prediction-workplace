@@ -1,0 +1,200 @@
+{% extends "layout.html" %}
+{% block title %}Team Stress Heatmap - Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-3">
+    <div class="col">
+      <h2>👥 Team Stress Heatmap</h2>
+      <p class="text-muted">Anonymised aggregate stress data across the organisation. No individual data is shown.</p>
+    </div>
+  </div>
+
+  {% if not heatmap %}
+  <div class="alert alert-info">No stress records in the system yet.</div>
+  {% else %}
+
+  <!-- Overall Stats Row -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-center border-primary">
+        <div class="card-body">
+          <h3 class="text-primary">{{ heatmap.total_users }}</h3>
+          <p class="mb-0 text-muted">Active Users</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center border-secondary">
+        <div class="card-body">
+          <h3>{{ heatmap.total_records }}</h3>
+          <p class="mb-0 text-muted">Total Assessments</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center {% if heatmap.overall_avg >= 3 %}border-danger{% elif heatmap.overall_avg >= 2 %}border-warning{% else %}border-success{% endif %}">
+        <div class="card-body">
+          <h3 class="{% if heatmap.overall_avg >= 3 %}text-danger{% elif heatmap.overall_avg >= 2 %}text-warning{% else %}text-success{% endif %}">
+            {{ heatmap.overall_avg }}/4
+          </h3>
+          <p class="mb-0 text-muted">Avg Stress Level</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center {% if heatmap.high_risk_pct >= 50 %}border-danger{% elif heatmap.high_risk_pct >= 25 %}border-warning{% else %}border-success{% endif %}">
+        <div class="card-body">
+          <h3 class="{% if heatmap.high_risk_pct >= 50 %}text-danger{% elif heatmap.high_risk_pct >= 25 %}text-warning{% else %}text-success{% endif %}">
+            {{ heatmap.high_risk_pct }}%
+          </h3>
+          <p class="mb-0 text-muted">High/Extreme Risk Sessions</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header fw-bold">Stress by Shift Type</div>
+        <div class="card-body"><canvas id="shiftChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header fw-bold">Stress by Work Type</div>
+        <div class="card-body"><canvas id="workTypeChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header fw-bold">Stress by Workload</div>
+        <div class="card-body"><canvas id="workloadChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap Tables -->
+  <div class="row mb-4">
+
+    <!-- Shift Heatmap -->
+    <div class="col-md-12 mb-4">
+      <div class="card">
+        <div class="card-header fw-bold">📊 Shift-Level Stress Heatmap (Anonymised)</div>
+        <div class="card-body table-responsive">
+          <table class="table table-bordered text-center align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Shift</th>
+                <th>Assessments</th>
+                <th>Avg Stress Level</th>
+                <th>Avg CSI Score</th>
+                <th>% High/Extreme</th>
+                <th>Risk Band</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for shift, data in heatmap.shift_data.items() %}
+              <tr class="{% if data.high_pct >= 60 %}table-danger{% elif data.high_pct >= 35 %}table-warning{% else %}table-success{% endif %}">
+                <td class="fw-bold">{{ shift }}</td>
+                <td>{{ data.count }}</td>
+                <td>{{ data.avg_stress }}/4</td>
+                <td>{{ data.avg_csi }}</td>
+                <td>{{ data.high_pct }}%</td>
+                <td>
+                  {% if data.high_pct >= 60 %}<span class="badge bg-danger">🔴 High Risk</span>
+                  {% elif data.high_pct >= 35 %}<span class="badge bg-warning text-dark">🟡 Moderate</span>
+                  {% else %}<span class="badge bg-success">🟢 Low Risk</span>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Work Type & Workload side by side -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header fw-bold">Work Type Breakdown</div>
+        <div class="card-body table-responsive">
+          <table class="table table-sm text-center">
+            <thead class="table-secondary"><tr><th>Type</th><th>Count</th><th>Avg Stress</th><th>% High</th></tr></thead>
+            <tbody>
+              {% for k, v in heatmap.work_type_data.items() %}
+              <tr>
+                <td>{{ k }}</td><td>{{ v.count }}</td>
+                <td class="{% if v.avg_stress >= 3 %}text-danger{% elif v.avg_stress >= 2 %}text-warning{% else %}text-success{% endif %}fw-bold">{{ v.avg_stress }}</td>
+                <td>{{ v.high_pct }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header fw-bold">Workload Breakdown</div>
+        <div class="card-body table-responsive">
+          <table class="table table-sm text-center">
+            <thead class="table-secondary"><tr><th>Workload</th><th>Count</th><th>Avg Stress</th><th>% High</th></tr></thead>
+            <tbody>
+              {% for k, v in heatmap.workload_data.items() %}
+              <tr>
+                <td>{{ k }}</td><td>{{ v.count }}</td>
+                <td class="{% if v.avg_stress >= 3 %}text-danger{% elif v.avg_stress >= 2 %}text-warning{% else %}text-success{% endif %}fw-bold">{{ v.avg_stress }}</td>
+                <td>{{ v.high_pct }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if heatmap %}
+const shiftLabels = [{% for k in heatmap.shift_data %}'{{ k }}',{% endfor %}];
+const shiftAvg    = [{% for k,v in heatmap.shift_data.items() %}{{ v.avg_stress }},{% endfor %}];
+const shiftHigh   = [{% for k,v in heatmap.shift_data.items() %}{{ v.high_pct }},{% endfor %}];
+
+new Chart(document.getElementById('shiftChart'), {
+  type: 'bar',
+  data: {
+    labels: shiftLabels,
+    datasets: [
+      { label: 'Avg Stress (1-4)', data: shiftAvg, backgroundColor: 'rgba(220,53,69,0.7)', yAxisID: 'y' },
+      { label: '% High/Extreme', data: shiftHigh, backgroundColor: 'rgba(255,193,7,0.5)', yAxisID: 'y1' }
+    ]
+  },
+  options: { scales: { y: { min:0, max:4, position:'left' }, y1: { min:0, max:100, position:'right', grid:{drawOnChartArea:false} } } }
+});
+
+const wtLabels = [{% for k in heatmap.work_type_data %}'{{ k }}',{% endfor %}];
+const wtAvg    = [{% for k,v in heatmap.work_type_data.items() %}{{ v.avg_stress }},{% endfor %}];
+new Chart(document.getElementById('workTypeChart'), {
+  type: 'bar',
+  data: { labels: wtLabels, datasets: [{ label: 'Avg Stress', data: wtAvg, backgroundColor: 'rgba(102,16,242,0.7)' }] },
+  options: { scales: { y: { min:0, max:4 } } }
+});
+
+const wlLabels = [{% for k in heatmap.workload_data %}'{{ k }}',{% endfor %}];
+const wlAvg    = [{% for k,v in heatmap.workload_data.items() %}{{ v.avg_stress }},{% endfor %}];
+new Chart(document.getElementById('workloadChart'), {
+  type: 'bar',
+  data: { labels: wlLabels, datasets: [{ label: 'Avg Stress', data: wlAvg, backgroundColor: 'rgba(23,162,184,0.7)' }] },
+  options: { scales: { y: { min:0, max:4 } } }
+});
+{% endif %}
+</script>
+{% endblock %}

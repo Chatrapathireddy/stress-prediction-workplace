@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block title %}StressIQ — Workplace Stress Intelligence{% endblock %}
+{% block content %}
+<div style="min-height:85vh;display:flex;align-items:center;background:radial-gradient(ellipse at 60% 0%, rgba(124,111,255,.12) 0%, transparent 60%)">
+  <div class="container py-5">
+    <div class="row align-items-center">
+      <div class="col-lg-6 mb-5 mb-lg-0">
+        <div style="display:inline-block;background:rgba(124,111,255,.12);border:1px solid rgba(124,111,255,.25);border-radius:20px;padding:.35rem 1rem;font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:1.5rem;letter-spacing:.5px">
+          WORKPLACE STRESS INTELLIGENCE
+        </div>
+        <h1 style="font-size:clamp(2.4rem,5vw,3.6rem);font-weight:800;line-height:1.1;letter-spacing:-1.5px;margin-bottom:1.25rem">
+          Detect. Understand.<br><span style="color:var(--accent)">Recover.</span>
+        </h1>
+        <p style="color:var(--muted);font-size:1.05rem;line-height:1.7;max-width:480px;margin-bottom:2rem">
+          StressIQ uses an ensemble ML model with 8 patented analytical layers to predict your workplace stress, find your personal triggers, and build a recovery plan — all in one platform.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{{ url_for('stress_predictor') }}" class="btn-prime" style="text-decoration:none;font-size:1rem;padding:.7rem 1.8rem">Try the Predictor →</a>
+          {% if not current_user.is_authenticated %}
+          <a href="{{ url_for('signup') }}" class="btn-ghost" style="text-decoration:none;font-size:1rem;padding:.7rem 1.6rem">Create Account</a>
+          {% endif %}
+        </div>
+
+        <div class="d-flex gap-4 mt-4 flex-wrap">
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent)">8</div><div style="font-size:.78rem;color:var(--muted)">Patent Claims</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--teal)">CSI</div><div style="font-size:.78rem;color:var(--muted)">Compound Score</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--yellow)">AI</div><div style="font-size:.78rem;color:var(--muted)">Adaptive Learning</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--red)">BEWS</div><div style="font-size:.78rem;color:var(--muted)">Burnout Warning</div></div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="row g-3">
+          {% set features = [
+            ('🧮', 'Compound Stress Index', 'Novel weighted formula combining 6 biophysical factors non-linearly', 'accent'),
+            ('🌡️', 'Environmental Stress Load', 'Unified biophysical environment score with compound amplifier', 'teal'),
+            ('🔮', 'Stress Forecasting', 'Predicts tomorrow\'s stress using your personal day-of-week patterns', 'yellow'),
+            ('🚨', 'Burnout Early Warning', '14-day trajectory analysis to detect burnout before it happens', 'red'),
+            ('🎯', 'Trigger Detector', 'Finds which factor is personally responsible for YOUR high stress', 'accent'),
+            ('🗓️', 'Recovery Planner', 'Auto-generates a personalised weekly stress recovery plan', 'teal'),
+          ] %}
+          {% for icon, title, desc, color in features %}
+          <div class="col-6">
+            <div class="card h-100" style="border-color:rgba(255,255,255,.04)">
+              <div class="card-body" style="padding:1rem">
+                <div style="font-size:1.5rem;margin-bottom:.5rem">{{ icon }}</div>
+                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;margin-bottom:.3rem">{{ title }}</div>
+                <div style="font-size:.78rem;color:var(--muted);line-height:1.5">{{ desc }}</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

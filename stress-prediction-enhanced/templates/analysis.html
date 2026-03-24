@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+{% block title %}Stress Analysis - Workplace Stress Detection{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col"><h2>Your Stress Analysis</h2></div>
+  </div>
+
+  <!-- Stress Level Distribution -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Stress Level Distribution</h5></div>
+        <div class="card-body"><canvas id="distributionChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Stress Trend Over Time</h5></div>
+        <div class="card-body"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW: CSI and ESL trend charts -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card h-100 border-warning">
+        <div class="card-header bg-warning text-dark"><h5 class="mb-0">🧮 Compound Stress Index (CSI) Trend</h5></div>
+        <div class="card-body"><canvas id="csiChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100 border-info">
+        <div class="card-header bg-info text-white"><h5 class="mb-0">🌡️ Environmental Stress Load (ESL) Trend</h5></div>
+        <div class="card-body"><canvas id="eslChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workload & Sleep Impact -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Workload Impact on Stress</h5></div>
+        <div class="card-body"><canvas id="workloadChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Sleep Impact on Stress</h5></div>
+        <div class="card-body"><canvas id="sleepChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const dates       = {{ dates | safe }};
+const stressLvls  = {{ stress_levels | safe }};
+const csiScores   = {{ csi_scores | safe }};
+const eslScores   = {{ esl_scores | safe }};
+
+// Distribution
+new Chart(document.getElementById('distributionChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Low', 'Medium', 'High', 'Extremely High'],
+    datasets: [{
+      data: [
+        {{ stress_level_counts.Low }},
+        {{ stress_level_counts.Medium }},
+        {{ stress_level_counts.High }},
+        {{ stress_level_counts['Extremely High'] }}
+      ],
+      backgroundColor: ['#28a745','#ffc107','#dc3545','#6f1a1a']
+    }]
+  }
+});
+
+// Stress trend
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: dates,
+    datasets: [{
+      label: 'Stress Level',
+      data: stressLvls,
+      borderColor: 'rgba(75,192,192,1)',
+      backgroundColor: 'rgba(75,192,192,0.15)',
+      borderWidth: 2, tension: 0.3, pointRadius: 5
+    }]
+  },
+  options: {
+    scales: {
+      y: { min: 0, max: 4, ticks: { callback: v => ['','Low','Medium','High','Extreme'][v] || '' }}
+    }
+  }
+});
+
+// CSI trend
+new Chart(document.getElementById('csiChart'), {
+  type: 'line',
+  data: {
+    labels: dates,
+    datasets: [{
+      label: 'CSI Score',
+      data: csiScores,
+      borderColor: '#f0ad4e',
+      backgroundColor: 'rgba(240,173,78,0.15)',
+      borderWidth: 2, tension: 0.3, pointRadius: 5
+    }]
+  },
+  options: { scales: { y: { min: 0, max: 100 }}}
+});
+
+// ESL trend
+new Chart(document.getElementById('eslChart'), {
+  type: 'line',
+  data: {
+    labels: dates,
+    datasets: [{
+      label: 'ESL Score',
+      data: eslScores,
+      borderColor: '#17a2b8',
+      backgroundColor: 'rgba(23,162,184,0.15)',
+      borderWidth: 2, tension: 0.3, pointRadius: 5
+    }]
+  },
+  options: { scales: { y: { min: 0, max: 100 }}}
+});
+
+// Workload
+const workloadLabels = [{% for k in workload_impact %}'{{ k }}',{% endfor %}];
+const workloadVals   = [{% for k,v in workload_impact.items() %}{{ v.avg_stress }},{% endfor %}];
+new Chart(document.getElementById('workloadChart'), {
+  type: 'bar',
+  data: { labels: workloadLabels, datasets: [{ label: 'Avg Stress', data: workloadVals, backgroundColor: '#6f42c1' }]}
+});
+
+// Sleep
+const sleepLabels = [{% for k in sleep_impact %}'{{ k }}',{% endfor %}];
+const sleepVals   = [{% for k,v in sleep_impact.items() %}{{ v.avg_stress }},{% endfor %}];
+new Chart(document.getElementById('sleepChart'), {
+  type: 'bar',
+  data: { labels: sleepLabels, datasets: [{ label: 'Avg Stress', data: sleepVals, backgroundColor: '#20c997' }]}
+});
+</script>
+{% endblock %}

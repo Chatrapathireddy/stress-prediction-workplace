@@ -1,0 +1,191 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard — StressIQ{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="pg-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>Your Dashboard</h2>
+      <p>Track, analyse, and manage your workplace stress</p>
+    </div>
+    <a href="{{ url_for('stress_predictor') }}" class="btn-prime" style="text-decoration:none">+ New Assessment</a>
+  </div>
+
+  <!-- STAT ROW -->
+  <div class="row g-3 mb-4">
+    {% if stress_records %}
+      {% set latest = stress_records[0] %}
+      <div class="col-6 col-md-3">
+        <div class="stat-box">
+          <div class="val {% if latest.stress_level == 'Low' %}stress-low{% elif latest.stress_level == 'Medium' %}stress-medium{% elif latest.stress_level == 'High' %}stress-high{% else %}stress-extreme{% endif %}">{{ latest.stress_level }}</div>
+          <div class="lbl">Current Level</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-box">
+          <div class="val" style="color:var(--accent)">{{ latest.stress_percentage }}%</div>
+          <div class="lbl">Confidence</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-box">
+          <div class="val" style="color:var(--yellow)">{{ stress_records|length }}</div>
+          <div class="lbl">Total Sessions</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-box">
+          <div class="val" style="color:var(--teal)">{{ latest.csi_score or '—' }}</div>
+          <div class="lbl">Latest CSI</div>
+        </div>
+      </div>
+    {% else %}
+      <div class="col-12">
+        <div class="card text-center" style="padding:3rem">
+          <div style="font-size:3rem;margin-bottom:1rem">🧠</div>
+          <h4>No assessments yet</h4>
+          <p style="color:var(--muted)">Take your first stress assessment to start tracking</p>
+          <a href="{{ url_for('stress_predictor') }}" class="btn-prime mx-auto mt-2" style="text-decoration:none;display:inline-block">Start Now →</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- CHART + QUICK LINKS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-8">
+      <div class="card h-100">
+        <div class="card-header">Stress Trend</div>
+        <div class="card-body">
+          {% if stress_records and stress_records|length > 1 %}
+            <canvas id="trendChart" height="120"></canvas>
+          {% else %}
+            <div class="text-center py-4" style="color:var(--muted)">Take 2+ assessments to see your trend</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header">Quick Actions</div>
+        <div class="card-body d-flex flex-column gap-2">
+          <a href="{{ url_for('stress_predictor') }}" class="btn-prime text-center" style="text-decoration:none">🧮 New Prediction</a>
+          <a href="{{ url_for('forecast') }}" class="btn-ghost text-center" style="text-decoration:none">🔮 View Forecast</a>
+          <a href="{{ url_for('trigger_detector') }}" class="btn-ghost text-center" style="text-decoration:none">🎯 My Triggers</a>
+          <a href="{{ url_for('recovery_plan') }}" class="btn-ghost text-center" style="text-decoration:none">🗓️ Recovery Plan</a>
+          <a href="{{ url_for('suggestions') }}" class="btn-ghost text-center" style="text-decoration:none">✨ Suggestions</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECORDS TABLE -->
+  {% if stress_records %}
+  <div class="card">
+    <div class="card-header">Recent Assessments</div>
+    <div class="card-body" style="padding:0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Date</th><th>Sleep</th><th>Workload</th><th>Work Type</th><th>CSI</th><th>Stress Level</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in stress_records %}
+            <tr>
+              <td style="color:var(--muted);font-size:.83rem">{{ r.date.strftime('%d %b %Y %H:%M') }}</td>
+              <td>{{ r.sleep_hours }}h</td>
+              <td>{{ r.workload }}</td>
+              <td>{{ r.type_of_work }}</td>
+              <td><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">{{ r.csi_score or '—' }}</span></td>
+              <td>
+                <span class="badge {% if r.stress_level == 'Low' %}bg-success{% elif r.stress_level == 'Medium' %}bg-warning{% else %}bg-danger{% endif %}">
+                  {{ r.stress_level }}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-ghost view-record" data-id="{{ r.id }}" style="font-size:.78rem;padding:.25rem .7rem">Details</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="recordModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Assessment Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card"><div class="card-body">
+              <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem">Personal Factors</div>
+              <div class="d-flex justify-content-between mb-2"><span style="color:var(--muted)">Sleep Hours</span><span id="m-sleep"></span></div>
+              <div class="d-flex justify-content-between"><span style="color:var(--muted)">Body Temperature</span><span id="m-btemp"></span></div>
+            </div></div>
+            <div class="card mt-2"><div class="card-body">
+              <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem">Environment</div>
+              <div class="d-flex justify-content-between mb-2"><span style="color:var(--muted)">Noise</span><span id="m-noise"></span></div>
+              <div class="d-flex justify-content-between"><span style="color:var(--muted)">Area Temperature</span><span id="m-atemp"></span></div>
+            </div></div>
+          </div>
+          <div class="col-md-6">
+            <div class="card"><div class="card-body">
+              <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem">Work Factors</div>
+              <div class="d-flex justify-content-between mb-2"><span style="color:var(--muted)">Hours</span><span id="m-hours"></span></div>
+              <div class="d-flex justify-content-between mb-2"><span style="color:var(--muted)">Workload</span><span id="m-workload"></span></div>
+              <div class="d-flex justify-content-between mb-2"><span style="color:var(--muted)">Type</span><span id="m-type"></span></div>
+              <div class="d-flex justify-content-between"><span style="color:var(--muted)">Shift</span><span id="m-shift"></span></div>
+            </div></div>
+            <div class="card mt-2"><div class="card-body">
+              <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem">Result</div>
+              <div class="d-flex justify-content-between mb-2"><span style="color:var(--muted)">Stress Level</span><span id="m-stress" style="font-family:'Syne',sans-serif;font-weight:700"></span></div>
+              <div class="d-flex justify-content-between mb-2"><span style="color:var(--muted)">CSI Score</span><span id="m-csi" style="color:var(--accent);font-weight:700"></span></div>
+              <div class="d-flex justify-content-between"><span style="color:var(--muted)">Date</span><span id="m-date" style="color:var(--muted);font-size:.83rem"></span></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if stress_records and stress_records|length > 1 %}
+const ctx = document.getElementById('trendChart').getContext('2d');
+const dates = [{% for r in stress_records|reverse %}'{{ r.date.strftime("%d %b") }}',{% endfor %}];
+const vals  = [{% for r in stress_records|reverse %}{% if r.stress_level=='Low'%}1{%elif r.stress_level=='Medium'%}2{%elif r.stress_level=='High'%}3{%else%}4{%endif%},{% endfor %}];
+new Chart(ctx,{type:'line',data:{labels:dates,datasets:[{label:'Stress',data:vals,borderColor:'#7c6fff',backgroundColor:'rgba(124,111,255,.1)',borderWidth:2,tension:.4,pointRadius:4,pointBackgroundColor:'#7c6fff',fill:true}]},options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{color:'#5a6380',callback:v=>['','Low','Medium','High','Extreme',''][v]||''},grid:{color:'rgba(255,255,255,.04)'}},x:{ticks:{color:'#5a6380'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+{% endif %}
+
+document.querySelectorAll('.view-record').forEach(b=>{
+  b.addEventListener('click',function(){
+    fetch(`/record/${this.dataset.id}`).then(r=>r.json()).then(d=>{
+      document.getElementById('m-sleep').textContent=d.sleep_hours+'h';
+      document.getElementById('m-btemp').textContent=d.body_temperature;
+      document.getElementById('m-noise').textContent=d.noise_levels;
+      document.getElementById('m-atemp').textContent=d.working_area_temperature;
+      document.getElementById('m-hours').textContent=d.working_hours;
+      document.getElementById('m-workload').textContent=d.workload;
+      document.getElementById('m-type').textContent=d.type_of_work;
+      document.getElementById('m-shift').textContent=d.working_shift;
+      document.getElementById('m-stress').textContent=d.stress_level;
+      document.getElementById('m-csi').textContent=d.csi_score||'—';
+      document.getElementById('m-date').textContent=d.date;
+      new bootstrap.Modal(document.getElementById('recordModal')).show();
+    });
+  });
+});
+</script>
+{% endblock %}

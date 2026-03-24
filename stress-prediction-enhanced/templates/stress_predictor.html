@@ -1,0 +1,158 @@
+{% extends "layout.html" %}
+{% block title %}Stress Predictor - Workplace Stress Detection{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row">
+    <div class="col-lg-9 mx-auto">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">Workplace Stress Predictor</h4>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('stress_predictor') }}">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Sleep Hours</label>
+                <input type="number" class="form-control" name="sleep_hours" min="0" max="24" step="0.5" required
+                       value="{{ input_data.sleep_hours if input_data is defined else '' }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Body Temperature</label>
+                <select class="form-select" name="body_temperature" required>
+                  <option value="" disabled selected>Select...</option>
+                  {% for o in body_temp_options %}<option value="{{ o }}" {{ 'selected' if input_data is defined and input_data.body_temperature == o }}>{{ o }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Noise Levels</label>
+                <select class="form-select" name="noise_levels" required>
+                  <option value="" disabled selected>Select...</option>
+                  {% for o in noise_options %}<option value="{{ o }}" {{ 'selected' if input_data is defined and input_data.noise_levels == o }}>{{ o }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Working Hours</label>
+                <select class="form-select" name="working_hours" required>
+                  <option value="" disabled selected>Select...</option>
+                  {% for o in work_hours_options %}<option value="{{ o }}" {{ 'selected' if input_data is defined and input_data.working_hours == o }}>{{ o }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Working Area Temperature</label>
+                <select class="form-select" name="working_area_temperature" required>
+                  <option value="" disabled selected>Select...</option>
+                  {% for o in temp_options %}<option value="{{ o }}" {{ 'selected' if input_data is defined and input_data.working_area_temperature == o }}>{{ o }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Workload</label>
+                <select class="form-select" name="workload" required>
+                  <option value="" disabled selected>Select...</option>
+                  {% for o in workload_options %}<option value="{{ o }}" {{ 'selected' if input_data is defined and input_data.workload == o }}>{{ o }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Type of Work</label>
+                <select class="form-select" name="type_of_work" required>
+                  <option value="" disabled selected>Select...</option>
+                  {% for o in work_type_options %}<option value="{{ o }}" {{ 'selected' if input_data is defined and input_data.type_of_work == o }}>{{ o }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Working Shift</label>
+                <select class="form-select" name="working_shift" required>
+                  <option value="" disabled selected>Select...</option>
+                  {% for o in shift_options %}<option value="{{ o }}" {{ 'selected' if input_data is defined and input_data.working_shift == o }}>{{ o }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="mt-4">
+              <button type="submit" class="btn btn-primary">Predict Stress Level</button>
+              <button type="reset" class="btn btn-outline-secondary">Reset</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {% if show_result %}
+      <div class="card mt-4">
+        <div class="card-header bg-dark text-white"><h4 class="mb-0">Prediction Result</h4></div>
+        <div class="card-body">
+          <div class="text-center mb-4">
+            <h2>Stress Level:
+              <span class="{% if prediction == 'Low' %}text-success{% elif prediction == 'Medium' %}text-warning{% else %}text-danger{% endif %}">{{ prediction }}</span>
+            </h2>
+            <p class="lead">Model Confidence: {{ percentage }}</p>
+            <div class="alert {% if prediction == 'Low' %}alert-success{% elif prediction == 'Medium' %}alert-warning{% else %}alert-danger{% endif %}">{{ message }}</div>
+          </div>
+
+          <!-- NEW: Patentable Score Cards -->
+          {% if csi_score is defined %}
+          <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+              <div class="card h-100 border-warning">
+                <div class="card-header bg-warning text-dark fw-bold">
+                  🧮 Compound Stress Index (CSI)
+                  <small class="d-block fw-normal text-muted">Multi-factor weighted interaction score</small>
+                </div>
+                <div class="card-body">
+                  <h2 class="text-center {% if csi_score < 30 %}text-success{% elif csi_score < 60 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ csi_score }}<small class="fs-5">/100</small>
+                  </h2>
+                  <div class="progress mb-3" style="height:10px">
+                    <div class="progress-bar {% if csi_score < 30 %}bg-success{% elif csi_score < 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ csi_score }}%"></div>
+                  </div>
+                  <table class="table table-sm small mb-0">
+                    <tr><td>Sleep Deprivation</td><td class="text-end"><span class="badge bg-secondary">{{ csi_breakdown.sleep_deprivation }}</span></td></tr>
+                    <tr><td>Night + Noise Compound</td><td class="text-end"><span class="badge bg-secondary">{{ csi_breakdown.night_noisy_compound }}</span></td></tr>
+                    <tr><td>Overwork Compound</td><td class="text-end"><span class="badge bg-secondary">{{ csi_breakdown.overwork_compound }}</span></td></tr>
+                    <tr><td>Thermal Discomfort</td><td class="text-end"><span class="badge bg-secondary">{{ csi_breakdown.thermal_discomfort }}</span></td></tr>
+                    <tr><td>Demanding Overwork</td><td class="text-end"><span class="badge bg-secondary">{{ csi_breakdown.demanding_overwork }}</span></td></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="card h-100 border-info">
+                <div class="card-header bg-info text-white fw-bold">
+                  🌡️ Environmental Stress Load (ESL)
+                  <small class="d-block fw-normal" style="opacity:.85">Unified biophysical environment score</small>
+                </div>
+                <div class="card-body">
+                  <h2 class="text-center {% if esl_score < 30 %}text-success{% elif esl_score < 60 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ esl_score }}<small class="fs-5">/100</small>
+                  </h2>
+                  <div class="progress mb-3" style="height:10px">
+                    <div class="progress-bar {% if esl_score < 30 %}bg-success{% elif esl_score < 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ esl_score }}%"></div>
+                  </div>
+                  <table class="table table-sm small mb-0">
+                    <tr><td>Noise Load</td><td class="text-end"><span class="badge bg-secondary">{{ esl_components.noise }}</span></td></tr>
+                    <tr><td>Workspace Temperature</td><td class="text-end"><span class="badge bg-secondary">{{ esl_components.workspace_temp }}</span></td></tr>
+                    <tr><td>Body Temperature Signal</td><td class="text-end"><span class="badge bg-secondary">{{ esl_components.body_temp }}</span></td></tr>
+                    <tr><td>Circadian Penalty</td><td class="text-end"><span class="badge bg-secondary">{{ esl_components.circadian_penalty }}</span></td></tr>
+                    <tr><td>Compound Amplifier</td><td class="text-end"><span class="badge bg-info text-dark">×{{ esl_components.amplifier }}</span></td></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if current_user.is_authenticated and not current_user.is_admin %}
+          <div class="mt-2">
+            <a href="{{ url_for('suggestions') }}" class="btn btn-primary">Get Adaptive Suggestions ✨</a>
+            <a href="{{ url_for('analysis') }}" class="btn btn-outline-dark">View Stress Analysis</a>
+          </div>
+          {% elif not current_user.is_authenticated %}
+          <div class="alert alert-info mt-4">
+            <strong>Note:</strong> <a href="{{ url_for('signup') }}" class="alert-link">Sign up</a> to save results and get AI-adaptive personalised suggestions!
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

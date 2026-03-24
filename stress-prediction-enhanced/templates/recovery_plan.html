@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+{% block title %}Recovery Plan — StressIQ{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="pg-header">
+    <h2>🗓️ Your Smart Recovery Plan</h2>
+    <p>Personalised 7-day plan generated from your stress analytics</p>
+  </div>
+
+  {% if not plan %}
+  <div class="alert alert-info">
+    You need at least <strong>1 stress assessment</strong> to generate a recovery plan.
+    <a href="{{ url_for('stress_predictor') }}" style="color:var(--accent)">Take an assessment →</a>
+  </div>
+  {% else %}
+
+  <!-- PLAN SUMMARY -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-box">
+        <div class="val stress-low">{{ plan.sleep_target }}h</div>
+        <div class="lbl">Sleep Target</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box">
+        <div class="val" style="color:var(--accent);font-size:1.1rem">{{ plan.break_schedule }}</div>
+        <div class="lbl">Break Schedule</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box">
+        <div class="val {% if plan.burnout_risk >= 75 %}stress-extreme{% elif plan.burnout_risk >= 50 %}stress-high{% elif plan.burnout_risk >= 25 %}stress-medium{% else %}stress-low{% endif %}">{{ plan.burnout_risk }}%</div>
+        <div class="lbl">Burnout Risk</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box">
+        <div class="val" style="color:var(--yellow)">{{ plan.avg_csi }}</div>
+        <div class="lbl">Avg CSI Score</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP TRIGGER CALLOUT -->
+  {% if plan.top_trigger %}
+  <div class="card mb-4 border-accent">
+    <div class="card-body d-flex gap-3 align-items-start">
+      <div style="font-size:2rem;flex-shrink:0">🎯</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">Your Top Trigger: {{ plan.top_trigger }}</div>
+        <div style="color:var(--muted);font-size:.88rem">{{ plan.trigger_activity }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 7-DAY PLAN -->
+  <div class="card">
+    <div class="card-header">7-Day Recovery Schedule</div>
+    <div class="card-body" style="padding:1rem">
+      <div class="row g-3">
+        {% for day in plan.days %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100" style="border-color:{% if loop.index <= 2 %}rgba(255,107,107,.2){% elif loop.index <= 4 %}rgba(255,217,61,.2){% else %}rgba(0,212,170,.2){% endif %}">
+            <div class="card-header" style="background:{% if loop.index <= 2 %}rgba(255,107,107,.08){% elif loop.index <= 4 %}rgba(255,217,61,.08){% else %}rgba(0,212,170,.08){% endif %};border-color:inherit">
+              <div class="d-flex justify-content-between align-items-center">
+                <span style="font-family:'Syne',sans-serif;font-weight:700">{{ day.day }}</span>
+                <span style="font-size:.72rem;color:var(--muted)">{{ day.focus }}</span>
+              </div>
+            </div>
+            <div class="card-body" style="padding:1rem">
+              <div style="font-size:.88rem;margin-bottom:.75rem;line-height:1.5">{{ day.activity }}</div>
+              <div class="d-flex flex-column gap-1" style="font-size:.78rem">
+                <div class="d-flex justify-content-between">
+                  <span style="color:var(--muted)">😴 Sleep</span>
+                  <span style="color:var(--teal)">{{ day.sleep_target }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span style="color:var(--muted)">⏱️ Breaks</span>
+                  <span style="color:var(--accent)">{{ day.break_schedule }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span style="color:var(--muted)">📊 Workload</span>
+                  <span style="color:var(--yellow);font-size:.72rem">{{ day.workload_cap }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span style="color:var(--muted)">🎯 Target</span>
+                  <span class="{% if day.stress_target == 'Low' %}stress-low{% else %}stress-medium{% endif %}" style="font-size:.72rem">{{ day.stress_target }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- 7th day - Sunday -->
+        <!-- already included in loop above -->
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('trigger_detector') }}" class="btn-ghost" style="text-decoration:none">🎯 View My Triggers</a>
+    <a href="{{ url_for('forecast') }}" class="btn-ghost ms-2" style="text-decoration:none">🔮 View Forecast</a>
+    <a href="{{ url_for('stress_predictor') }}" class="btn-prime ms-2" style="text-decoration:none">New Assessment</a>
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}
