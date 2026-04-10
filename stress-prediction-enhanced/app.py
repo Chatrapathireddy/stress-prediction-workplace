@@ -22,13 +22,7 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 
-# ============================================================
-# PATENTABLE FEATURE 1: Compound Stress Index (CSI) Engine
-# A novel weighted multi-factor interaction formula that computes
-# a composite stress score using non-linear factor combinations.
-# Patent claim: "A system for computing a Compound Stress Index
-# via weighted biophysical-environmental factor interactions"
-# ============================================================
+
 
 CSI_WEIGHTS = {
     'sleep_deprivation':     0.28,
@@ -48,7 +42,7 @@ def compute_compound_stress_index(record):
     """
     breakdown = {}
 
-    # Factor 1: Sleep Deprivation (non-linear quadratic penalty below 6hrs)
+    
     sleep = float(record.sleep_hours)
     if sleep < 6:
         sleep_score = ((6 - sleep) / 6) ** 1.5 * 100
@@ -58,31 +52,31 @@ def compute_compound_stress_index(record):
         sleep_score = 0
     breakdown['sleep_deprivation'] = round(sleep_score, 2)
 
-    # Factor 2: Night Shift + Noise Compound Interaction
+   
     is_night = 1 if record.working_shift == 'Night shift' else 0
     is_noisy = 1 if record.noise_levels == 'Noisy' else 0
     night_noisy_score = (is_night * 60) + (is_noisy * 40) + (is_night * is_noisy * 50)
     breakdown['night_noisy_compound'] = round(night_noisy_score, 2)
 
-    # Factor 3: Overwork Compound (workload x hours interaction)
+   
     heavy_workload = 1 if record.workload == 'Heavy' else 0
     long_hours = 1 if record.working_hours in ['Long Day', 'Extreme Overtime'] else 0
     extreme_hours = 1 if record.working_hours == 'Extreme Overtime' else 0
     overwork_score = (heavy_workload * 50) + (long_hours * 40) + (heavy_workload * extreme_hours * 60)
     breakdown['overwork_compound'] = round(overwork_score, 2)
 
-    # Factor 4: Thermal Discomfort (body + environment combined)
+   
     body_abnormal = 1 if record.body_temperature == 'Not Normal' else 0
     workspace_uncomfortable = 1 if record.working_area_temperature == 'Uncomfortable' else 0
     thermal_score = (body_abnormal * 70) + (workspace_uncomfortable * 50) + (body_abnormal * workspace_uncomfortable * 40)
     breakdown['thermal_discomfort'] = round(thermal_score, 2)
 
-    # Factor 5: Demanding Work x Heavy Workload
+   
     demanding = 1 if record.type_of_work == 'Demanding' else 0
     demanding_score = (demanding * 50) + (demanding * heavy_workload * 60)
     breakdown['demanding_overwork'] = round(demanding_score, 2)
 
-    # Factor 6: Body Temperature Signal
+    
     body_score = 80 if body_abnormal else 0
     breakdown['body_signal'] = round(body_score, 2)
 
@@ -102,15 +96,6 @@ def compute_compound_stress_index(record):
 
     breakdown['csi_total'] = round(csi, 2)
     return round(csi, 2), breakdown
-
-
-# ============================================================
-# PATENTABLE FEATURE 2: Adaptive Feedback Loop (AFL)
-# Suggestions are re-weighted based on whether the user's stress
-# actually improved in the following session.
-# Patent claim: "A method for adaptive suggestion re-weighting
-# based on longitudinal user stress outcome tracking"
-# ============================================================
 
 class SuggestionFeedback(db.Model):
     id             = db.Column(db.Integer, primary_key=True)
@@ -162,14 +147,6 @@ def record_suggestions_shown(user_id, suggestion_keys, stress_pct):
     db.session.commit()
 
 
-# ============================================================
-# PATENTABLE FEATURE 3: Environmental Stress Load (ESL) Score
-# Combines all physical/environmental signals into a unified
-# biophysical index with compound amplifier logic.
-# Patent claim: "A system for computing a unified Environmental
-# Stress Load score from multi-modal biophysical sensor inputs"
-# ============================================================
-
 def compute_esl_score(record):
     components = {}
 
@@ -202,10 +179,6 @@ def compute_esl_score(record):
     components['esl_total'] = esl_score
     return esl_score, components
 
-
-# ============================================================
-# DATABASE MODELS
-# ============================================================
 
 class User(UserMixin, db.Model):
     id             = db.Column(db.Integer, primary_key=True)
@@ -251,9 +224,7 @@ def admin_required(f):
     return decorated_function
 
 
-# ============================================================
-# MODEL LOADING
-# ============================================================
+
 
 def load_model_resources():
     try:
@@ -316,9 +287,7 @@ def predict_stress_level(input_data, encoders_info, model):
     return pred_label, pred_encoded, pred_proba
 
 
-# ============================================================
-# ADAPTIVE SUGGESTIONS LIBRARY
-# ============================================================
+
 
 SUGGESTION_LIBRARY = {
     'sleep_low':            {'title': 'Improve Sleep Quality',         'content': "You're sleeping under 6 hours. Aim for 7-8 hrs by setting a fixed bedtime. Even 30 extra minutes can lower cortisol levels significantly."},
@@ -366,10 +335,6 @@ def get_adaptive_suggestions(stress_record, user_id=None):
     suggestions.sort(key=lambda x: x['weight'], reverse=True)
     return suggestions, keys
 
-
-# ============================================================
-# ROUTES
-# ============================================================
 
 @app.context_processor
 def inject_year():
@@ -650,16 +615,6 @@ def suggestion_feedback():
         db.session.commit()
     return jsonify({'status': 'ok'})
 
-
-# ============================================================
-# PATENTABLE FEATURE 4: Stress Risk Forecasting (SRF)
-# Uses the user's historical stress records to predict their
-# stress level for the next day using pattern recognition
-# across day-of-week, rolling averages, and trend momentum.
-# Patent claim: "A method for next-day workplace stress
-# forecasting using temporal pattern analysis of prior records"
-# ============================================================
-
 def compute_stress_forecast(user_id):
     """
     PATENTABLE FEATURE 4: Stress Risk Forecasting (SRF)
@@ -759,15 +714,6 @@ def compute_stress_forecast(user_id):
     }
 
 
-# ============================================================
-# PATENTABLE FEATURE 5: Burnout Early Warning System (BEWS)
-# Monitors CSI scores over a rolling 7-14 day window and
-# computes a Burnout Risk Percentage using trend slope,
-# frequency of high-stress days, and recovery gap analysis.
-# Patent claim: "A longitudinal burnout detection algorithm
-# using multi-session stress trajectory analysis"
-# ============================================================
-
 def compute_burnout_risk(user_id):
     """
     PATENTABLE FEATURE 5: Burnout Early Warning System (BEWS)
@@ -862,14 +808,6 @@ def compute_burnout_risk(user_id):
     }
 
 
-# ============================================================
-# PATENTABLE FEATURE 6: Team Stress Heatmap (TSH)
-# Aggregates anonymised stress data by department/shift to
-# produce a team-level stress heatmap visible only to admins.
-# Patent claim: "A system for anonymised aggregate workplace
-# stress monitoring with department-level risk stratification"
-# ============================================================
-
 def compute_team_heatmap():
     """
     PATENTABLE FEATURE 6: Team Stress Heatmap
@@ -963,14 +901,6 @@ def forecast():
         forecast=forecast_data, burnout=burnout_data)
 
 
-# ============================================================
-# PATENTABLE FEATURE 7: Stress Trigger Detector (STD)
-# Analyses all user records to identify which single factor
-# is personally most responsible for their high-stress sessions.
-# Patent claim: "A personalised root-cause attribution system
-# for workplace stress using per-user factor correlation analysis"
-# ============================================================
-
 def compute_trigger_detector(user_id):
     records = StressRecord.query.filter_by(user_id=user_id).all()
     if len(records) < 3:
@@ -1027,15 +957,6 @@ def compute_trigger_detector(user_id):
         'top_impact':  sorted_factors[0][1]['impact'] if sorted_factors else 0,
         'total_records': len(records),
     }
-
-
-# ============================================================
-# PATENTABLE FEATURE 8: Smart Recovery Planner (SRP)
-# Combines burnout risk, CSI score, ESL score, and trigger
-# analysis to auto-generate a personalised 7-day recovery plan.
-# Patent claim: "A method for generating personalised workplace
-# stress recovery plans from multi-dimensional stress analytics"
-# ============================================================
 
 def generate_recovery_plan(user_id):
     records = StressRecord.query.filter_by(
@@ -1141,9 +1062,7 @@ def team_heatmap():
     return render_template('team_heatmap.html', heatmap=heatmap)
 
 
-# ============================================================
-# DB INIT
-# ============================================================
+
 
 with app.app_context():
     db.create_all()
@@ -1160,3 +1079,5 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+   
+   
