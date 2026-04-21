@@ -809,11 +809,8 @@ def compute_burnout_risk(user_id):
 
 
 def compute_team_heatmap():
-    """
-    PATENTABLE FEATURE 6: Team Stress Heatmap
-    Returns anonymised aggregate stress stats grouped by
-    shift, workload type, and work type — no individual data exposed.
-    """
+    
+ 
     records = StressRecord.query.all()
     if not records:
         return None

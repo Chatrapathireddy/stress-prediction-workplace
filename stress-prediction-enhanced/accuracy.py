@@ -1,35 +1,41 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import (accuracy_score, f1_score, precision_score,
+                             recall_score, classification_report,
+                             confusion_matrix)
+from xgboost import XGBClassifier
 
-# Load dataset
-data = pd.read_csv("workplace_stress_dataset_4k_dramatically_improved.csv")
+df = pd.read_csv('workplace_stress_dataset_4k_dramatically_improved.csv')
 
-# Encode all object (text) columns
-le = LabelEncoder()
-for col in data.columns:
-    if data[col].dtype == 'object':
-        data[col] = le.fit_transform(data[col])
+for col in df.select_dtypes(include='object').columns:
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col].astype(str))
 
-# Features & target
-X = data.drop("high_stress_binary", axis=1)
-y = data["high_stress_binary"]
+target_col = 'calculated_stress_level'
+X = df.drop(columns=[target_col])
+y = df[target_col]
 
-# Split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-# Model
-model = RandomForestClassifier()
+model = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1, random_state=42, eval_metric='mlogloss')
 model.fit(X_train, y_train)
-
-# Predict
 y_pred = model.predict(X_test)
 
-# Accuracy
-accuracy = accuracy_score(y_test, y_pred)
-
-print("Model Accuracy:", accuracy * 100, "%")
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix
+print("="*55)
+print("      STRESSIQ — MODEL EVALUATION RESULTS")
+print("="*55)
+print(f"Accuracy  : {accuracy_score(y_test, y_pred)*100:.2f}%")
+print(f"F1-Score  : {f1_score(y_test, y_pred, average='macro'):.4f}")
+print(f"Precision : {precision_score(y_test, y_pred, average='macro'):.4f}")
+print(f"Recall    : {recall_score(y_test, y_pred, average='macro'):.4f}")
+print("="*55)
+print(classification_report(y_test, y_pred))
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+from sklearn.model_selection import cross_val_score
+cv = cross_val_score(model, X, y, cv=5, scoring='accuracy')
+print(f"\nCV Mean: {cv.mean()*100:.2f}% ± {cv.std()*100:.2f}%")
